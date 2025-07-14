@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ /*question,*/ chartData }),
+      body: JSON.stringify({ question, chartData }),
     })
 
     if (!apiResponse.ok) {
