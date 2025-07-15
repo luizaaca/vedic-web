@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
+import Chart from "@/components/Chart"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -404,30 +405,13 @@ export default function VedicAstrologyApp() {
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-4">
-                  <div className="flex justify-end mb-2">
-                    <Button variant="ghost" size="sm" onClick={handleCopy}>
-                      {isCopied ? (
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4 mr-2" />
-                      )}
-                      {isCopied ? "Copiado!" : "Copiar JSON"}
-                    </Button>
-                  </div>
-                  <ScrollArea className="h-64 w-full rounded-md border p-4">
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {JSON.stringify(chartResult, null, 2)}
-                    </pre>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+                <CardContent className="pt-4">                  
+                  <Chart chartData={chartResult} />
                 </CardContent>
               </CollapsibleContent>
-            </Collapsible>
+             </Collapsible>
           </Card>
         )}
-
-        {/* Seção de Chat */}
         {chartResult && (
           <Card>
             <CardHeader>
@@ -509,6 +493,7 @@ export default function VedicAstrologyApp() {
                 Você pode perguntar sobre planetas, casas, aspectos ou qualquer elemento do seu mapa.
               </p>
             </CardContent>
+              
           </Card>
         )}
       </div>
