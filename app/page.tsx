@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 //import Chart from "@/components/Chart"
@@ -108,6 +108,7 @@ export default function VedicAstrologyApp() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentQuestion, setCurrentQuestion] = useState("")
   const [isChatLoading, setIsChatLoading] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   const handleInputChange = (field: keyof BirthData, value: string) => {
     setBirthData((prev) => ({
@@ -139,7 +140,7 @@ export default function VedicAstrologyApp() {
 
   const getInitialInterpretation = async (chartData: any) => {
     setIsChatLoading(true)
-    const defaultQuestion = "Faça um resumo deste mapa astral, destacando os pontos mais importantes como o ascendente, a lua e o sol."
+    const defaultQuestion = "Faça um resumo deste mapa astral, resumindo os pontos mais importantes como o ascendente, a lua e o sol. Sugira perguntas para o usuário continuar a conversa. Mas seja conversacional, pergunte se ele gostaria de saber mais."
 
     try {
       const response = await fetch("/api/interpret", {
@@ -251,17 +252,23 @@ export default function VedicAstrologyApp() {
   const handleReset = () => {
     setBirthData({
       fullName: "",
-      birthDate: "1985-11-16",
-      birthTime: "07:00",
-      timezone: "-3",
-      latitude: "-23.5505",
-      longitude: "-46.6333",
+      birthDate: "",
+      birthTime: "",
+      timezone: "",
+      latitude: "",
+      longitude: "",
     })
     setChartResult(null)
     setChatMessages([])
     setCurrentQuestion("")
     setIsChartSectionOpen(false)
   }
+
+  useEffect(() => {
+  if (chartResult && resultsRef.current) {
+    resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+}, [chartResult])
 
   return (
     <>
@@ -389,7 +396,7 @@ export default function VedicAstrologyApp() {
 
         {/* Resultado do Mapa Astral */}
         {chartResult && (
-          <Card>
+          <Card ref={resultsRef}>
             <Collapsible open={isChartSectionOpen} onOpenChange={setIsChartSectionOpen}>
               <CollapsibleTrigger asChild>
                 <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg">
