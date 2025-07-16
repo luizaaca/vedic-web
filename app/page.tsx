@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-import Chart from "@/components/Chart"
+//import Chart from "@/components/Chart"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +31,7 @@ const MapPicker = dynamic(
   () => import("@/components/MapPicker").then((mod) => mod.MapPicker),
   { ssr: false, loading: () => <p>Carregando mapa...</p> }
 )
+const Chart = dynamic(() => import("@/components/Chart"), { ssr: false })
 
 interface BirthData {
   fullName: string
@@ -138,7 +139,7 @@ export default function VedicAstrologyApp() {
 
   const getInitialInterpretation = async (chartData: any) => {
     setIsChatLoading(true)
-    const defaultQuestion = "Faça uma análise geral e inicial deste mapa astral, destacando os pontos mais importantes como o ascendente, a lua e o sol."
+    const defaultQuestion = "Faça um resumo deste mapa astral, destacando os pontos mais importantes como o ascendente, a lua e o sol."
 
     try {
       const response = await fetch("/api/interpret", {
@@ -189,6 +190,7 @@ export default function VedicAstrologyApp() {
       if (response.ok) {
         const result = await response.json()
         setChartResult(result)
+        setIsChartSectionOpen(true)
         getInitialInterpretation(result)
       } else {
         console.error("Erro ao calcular mapa astral")
@@ -249,23 +251,16 @@ export default function VedicAstrologyApp() {
   const handleReset = () => {
     setBirthData({
       fullName: "",
-      birthDate: "",
-      birthTime: "",
-      timezone: "",
-      latitude: "",
-      longitude: "",
+      birthDate: "1985-11-16",
+      birthTime: "07:00",
+      timezone: "-3",
+      latitude: "-23.5505",
+      longitude: "-46.6333",
     })
     setChartResult(null)
     setChatMessages([])
     setCurrentQuestion("")
     setIsChartSectionOpen(false)
-  }
-
-  const handleCopy = () => {
-    if (!chartResult) return
-    navigator.clipboard.writeText(JSON.stringify(chartResult, null, 2))
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 2000)
   }
 
   return (
