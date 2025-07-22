@@ -67,7 +67,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(({ chartData, birthData }, ref
     }
 
     // Cria o gráfico dentro da div
-    const chart = new ChartLib(chartContainerId, 400, 400);
+    const chart = new ChartLib(chartContainerId, 390, 390);
     chart.radix(data);
   }, [data]);
 
@@ -104,9 +104,9 @@ const Chart = forwardRef<ChartHandle, ChartProps>(({ chartData, birthData }, ref
       <div className="flex flex-col items-center gap-6">
         {/* Mapa Astral com borda */}
         <div className="flex justify-center items-center">
-          <div className="p-2 rounded-full bg-gradient-to-br from-purple-200 via-indigo-200 to-blue-200 shadow-lg">
+          <div className="p-1 rounded-full bg-gradient-to-br from-green-200 via-indigo-200 to-red-200 shadow-lg">
             <div className="bg-white rounded-full">
-              <div id={chartContainerId} style={{ width: 400, height: 400 }} />
+              <div id={chartContainerId} style={{ width: 390, height: 390 }} />
             </div>
           </div>
         </div>
