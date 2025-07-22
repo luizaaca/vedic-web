@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import dynamic from "next/dynamic"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 //import Chart from "@/components/Chart"
 import { Input } from "@/components/ui/input"
@@ -20,18 +19,21 @@ import {
   Copy,
   Check,
   RotateCcw,
+  Download,
   Loader2,
   User,
   Sparkles,
   Map,
 } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
-// Importa o MapPicker dinamicamente para garantir que ele seja renderizado apenas no cliente (SSR false)
+import dynamic from "next/dynamic"
+import type { ChartHandle } from "@/components/Chart"
 const MapPicker = dynamic(
   () => import("@/components/MapPicker").then((mod) => mod.MapPicker),
   { ssr: false, loading: () => <p>Carregando mapa...</p> }
 )
-const Chart = dynamic(() => import("@/components/Chart"), { ssr: false })
+const Chart = dynamic(() => import("@/components/Chart"), { ssr: false });
 
 interface BirthData {
   fullName: string
@@ -109,6 +111,8 @@ export default function VedicAstrologyApp() {
   const [currentQuestion, setCurrentQuestion] = useState("")
   const [isChatLoading, setIsChatLoading] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const chartComponentRef = useRef<ChartHandle>(null);
 
   const handleInputChange = (field: keyof BirthData, value: string) => {
     setBirthData((prev) => ({
@@ -140,7 +144,7 @@ export default function VedicAstrologyApp() {
 
   const getInitialInterpretation = async (chartData: any) => {
     setIsChatLoading(true)
-    const defaultQuestion = "Faça um resumo deste mapa astral, resumindo os pontos mais importantes como o ascendente, a lua e o sol. Sugira perguntas para o usuário continuar a conversa. Mas seja conversacional, pergunte se ele gostaria de saber mais."
+    const defaultQuestion = "Faça um resumo deste mapa astral."
 
     try {
       const response = await fetch("/api/interpret", {
@@ -270,236 +274,265 @@ export default function VedicAstrologyApp() {
   }
 }, [chartResult])
 
+useEffect(() => {
+  if (chatEndRef.current) {
+    chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+}, [chatMessages, isChatLoading])
+
+  const handleDownloadChart = () => {
+    chartComponentRef.current?.downloadChart();
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 sm:p-6 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center py-4 md:py-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Astrologia Védica</h1>
-          <p className="text-gray-600">Calcule seu mapa astral védico e obtenha interpretações personalizadas</p>
-        </div>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center py-4 md:py-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Astrologia Védica</h1>
+            <p className="text-gray-600">Calcule seu mapa astral védico e obtenha interpretações personalizadas</p>
+          </div>
 
-        {/* Formulário de Dados de Nascimento */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-6 h-6 text-indigo-600" />
-              Dados de Nascimento
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="fullName">Nome Completo (Opcional)</Label>
-                <Input 
-                  id="fullName"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={birthData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="birthDate">Data de Nascimento</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={birthData.birthDate}
-                  onChange={(e) => handleInputChange("birthDate", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="birthTime">Hora de Nascimento</Label>
-                <Input
-                  id="birthTime"
-                  type="time"
-                  value={birthData.birthTime}
-                  onChange={(e) => handleInputChange("birthTime", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="timezone">Fuso Horário</Label>
-                <Select
-                  value={birthData.timezone}
-                  onValueChange={(value) => handleInputChange("timezone", value)}
-                  required
-                >
-                  <SelectTrigger id="timezone">
-                    <SelectValue placeholder="Selecione o fuso horário..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timezones.map((tz) => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2 flex items-center justify-between border-t pt-4 mt-4">
-                <p className="text-sm text-gray-600">Não sabe as coordenadas?</p>
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsMapOpen(true)}>
-                  <Map className="w-4 h-4 mr-2" />
-                  Selecionar no Mapa
-                </Button>
-              </div>
-
-              <div>
-                <Label htmlFor="latitude">Latitude</Label>
-                <Input
-                  id="latitude"
-                  type="number"
-                  step="any"
-                  placeholder="-23.5505 (São Paulo)"
-                  value={birthData.latitude}
-                  onChange={(e) => handleInputChange("latitude", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="longitude">Longitude</Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  step="any"
-                  placeholder="-46.6333 (São Paulo)"
-                  value={birthData.longitude}
-                  onChange={(e) => handleInputChange("longitude", e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 pt-4">
-              <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Resetar
-              </Button>
-              <Button onClick={calculateChart} disabled={!isFormValid || isLoading} className="w-full" size="lg">
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                ) : (
-                  <Calculator className="w-5 h-5 mr-2" />
-                )}
-                {isLoading ? "Calculando..." : "Calcular Mapa Védico"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Resultado do Mapa Astral */}
-        {chartResult && (
-          <Card ref={resultsRef}>
-            <Collapsible open={isChartSectionOpen} onOpenChange={setIsChartSectionOpen}>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg">
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Resultado do Mapa Astral</span>
-                    {isChartSectionOpen ? <ChevronUp /> : <ChevronDown />}
-                  </CardTitle>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-4">                  
-                  <Chart chartData={chartResult} />
-                </CardContent>
-              </CollapsibleContent>
-             </Collapsible>
-          </Card>
-        )}
-        {chartResult && (
+          {/* Formulário de Dados de Nascimento */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="w-6 h-6 text-indigo-600" />
-                Interpretação Personalizada
+                <Calculator className="w-6 h-6 text-indigo-600" />
+                Dados de Nascimento
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <ScrollArea className="h-80 w-full rounded-md border p-4">
-                <div className="space-y-4">
-                  {chatMessages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-start gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      {message.type === "ai" && (
-                        <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
-                          <Sparkles className="w-5 h-5 text-indigo-600" />
-                        </span>
-                      )}
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 text-sm ${
-                          message.type === "user"
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-100 text-gray-900 whitespace-pre-wrap"
-                        }`}
-                      >
-                        <p>{message.content}</p>
-                        <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>{message.timestamp.toLocaleTimeString()}</p>
-                      </div>
-                      {message.type === "user" && (
-                        <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-200">
-                          <User className="w-5 h-5 text-gray-600" />
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {isChatLoading && chatMessages.length > 0 && (
-                    <div className="flex items-start gap-3 justify-start">
-                       <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
-                          <Sparkles className="w-5 h-5 text-indigo-600" />
-                        </span>
-                      <div className="bg-gray-100 text-gray-900 rounded-lg p-3 flex items-center space-x-2">
-                         <Loader2 className="w-4 h-4 animate-spin" />
-                         <span>Analisando...</span>
-                      </div>
-                    </div>
-                  )}
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="fullName">Nome Completo (Opcional)</Label>
+                  <Input 
+                    id="fullName"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={birthData.fullName}
+                    onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  />
                 </div>
-                <ScrollBar />
-              </ScrollArea>
 
-              <div className="flex items-start gap-2 pt-2">
-                <Textarea
-                  placeholder="Faça outra pergunta sobre seu mapa..."
-                  value={currentQuestion}
-                  onChange={(e) => setCurrentQuestion(e.target.value)}
-                  className="flex-1 resize-none"
-                  rows={2}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendQuestion();
-                    }
-                  }}
-                />
-                <Button onClick={sendQuestion} disabled={!currentQuestion.trim() || isChatLoading} size="icon" className="h-full">
-                  {isChatLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  <span className="sr-only">Enviar Pergunta</span>
-                </Button>
+                <div>
+                  <Label htmlFor="birthDate">Data de Nascimento</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={birthData.birthDate}
+                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="birthTime">Hora de Nascimento</Label>
+                  <Input
+                    id="birthTime"
+                    type="time"
+                    value={birthData.birthTime}
+                    onChange={(e) => handleInputChange("birthTime", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="timezone">Fuso Horário</Label>
+                  <Select
+                    value={birthData.timezone}
+                    onValueChange={(value) => handleInputChange("timezone", value)}
+                    required
+                  >
+                    <SelectTrigger id="timezone">
+                      <SelectValue placeholder="Selecione o fuso horário..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timezones.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2 flex items-center justify-between border-t pt-4 mt-4">
+                  <p className="text-sm text-gray-600">Não sabe as coordenadas?</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setIsMapOpen(true)}>
+                    <Map className="w-4 h-4 mr-2" />
+                    Selecionar no Mapa
+                  </Button>
+                </div>
+
+                <div>
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input
+                    id="latitude"
+                    type="number"
+                    step="any"
+                    placeholder="-23.5505 (São Paulo)"
+                    value={birthData.latitude}
+                    onChange={(e) => handleInputChange("latitude", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input
+                    id="longitude"
+                    type="number"
+                    step="any"
+                    placeholder="-46.6333 (São Paulo)"
+                    value={birthData.longitude}
+                    onChange={(e) => handleInputChange("longitude", e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <p className="text-xs text-gray-500 text-center pt-2">
-                Você pode perguntar sobre planetas, casas, aspectos ou qualquer elemento do seu mapa.
-              </p>
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto">
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Resetar
+                </Button>
+                <Button onClick={calculateChart} disabled={!isFormValid || isLoading} className="w-full" size="lg">
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  ) : (
+                    <Calculator className="w-5 h-5 mr-2" />
+                  )}
+                  {isLoading ? "Calculando..." : "Calcular Mapa Védico"}
+                </Button>
+              </div>
             </CardContent>
-              
           </Card>
-        )}
+
+          {/* Resultado do Mapa Astral */}
+          {chartResult && (
+            <Card ref={resultsRef}>
+              <Collapsible open={isChartSectionOpen} onOpenChange={setIsChartSectionOpen}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg">
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Resultado do Mapa Astral</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            handleDownloadChart();
+                          }}
+                          aria-label="Baixar mapa como imagem"
+                        >
+                          <Download className="w-5 h-5" />
+                        </Button>
+                        {isChartSectionOpen ? <ChevronUp /> : <ChevronDown />}
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-4">                  
+                    <Chart ref={chartComponentRef} chartData={chartResult} birthData={birthData} />
+                  </CardContent>
+                </CollapsibleContent>
+               </Collapsible>
+            </Card>
+          )}
+          {chartResult && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="w-6 h-6 text-indigo-600" />
+                  Interpretação Personalizada
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <ScrollArea className="h-80 w-full rounded-md border p-4">
+                    <div
+                      className="space-y-4 h-full overflow-y-auto"
+                      style={{ maxHeight: "100%" }}
+                    >
+                      {chatMessages.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-start gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          {index === chatMessages.length - 1 && <div ref={chatEndRef} />}
+                          {message.type === "ai" && (
+                            <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
+                              <Sparkles className="w-5 h-5 text-indigo-600" />
+                            </span>
+                          )}
+                          <div
+                            className={`max-w-[80%] rounded-lg p-3 text-sm ${
+                              message.type === "user"
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-100 text-gray-900 whitespace-pre-wrap"
+                            }`}
+                          >
+                            <div className="prose prose-sm leading-tight">
+                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                            </div>
+                            <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>{message.timestamp.toLocaleTimeString()}</p>
+                          </div>
+                          {message.type === "user" && (
+                            <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-200">
+                              <User className="w-5 h-5 text-gray-600" />
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {isChatLoading && chatMessages.length > 0 && (
+                        <div className="flex items-start gap-3 justify-start">
+                          <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
+                            <Sparkles className="w-5 h-5 text-indigo-600" />
+                          </span>
+                          <div className="bg-gray-100 text-gray-900 rounded-lg p-3 flex items-center space-x-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Analisando...</span>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <ScrollBar />
+                  </ScrollArea>
+                </div>
+                <div className="flex items-start gap-2 pt-2">
+                  <Textarea
+                    placeholder="Faça outra pergunta sobre seu mapa..."
+                    value={currentQuestion}
+                    onChange={(e) => setCurrentQuestion(e.target.value)}
+                    className="flex-1 resize-none"
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendQuestion();
+                      }
+                    }}
+                  />
+                  <Button onClick={sendQuestion} disabled={!currentQuestion.trim() || isChatLoading} size="icon" className="h-full">
+                    {isChatLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    <span className="sr-only">Enviar Pergunta</span>
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 text-center pt-2">
+                  Você pode perguntar sobre planetas, casas, aspectos ou qualquer elemento do seu mapa.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
       <MapPicker
         isOpen={isMapOpen}
         onOpenChange={setIsMapOpen}
