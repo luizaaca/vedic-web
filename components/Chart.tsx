@@ -73,23 +73,38 @@ const Chart = forwardRef<ChartHandle, ChartProps>(({ chartData, birthData }, ref
 
   useImperativeHandle(ref, () => ({
     downloadChart: () => {
-      if (!downloadableAreaRef.current) {
-        console.error("Área do gráfico para download não encontrada.");
-        alert("Erro: Não foi possível encontrar a área do gráfico para download.");
-        return;
+      const element = downloadableAreaRef.current;
+      if (!element) {
+         console.error("Área do gráfico para download não encontrada.");
+         alert("Erro: Não foi possível encontrar a área do gráfico para download.");
+         return;
       }
 
-      toJpeg(downloadableAreaRef.current, {
+      toJpeg(element, {
         quality: 1.0, // Qualidade máxima
         pixelRatio: 2, // Dobro da resolução para melhor qualidade em telas de alta densidade
-        // A cor de fundo da div será usada, mas podemos forçar uma aqui se quisermos
-        // backgroundColor: '#ffffff', 
       })
         .then((dataUrl) => {
-          const link = document.createElement("a");
-          link.download = "mapa-astral.jpg";
-          link.href = dataUrl;
-          link.click();
+          // Verifica se está rodando dentro de um React Native WebView
+          if (window.ReactNativeWebView) {
+            // Envia os dados da imagem para o app nativo
+            window.ReactNativeWebView.postMessage(
+              JSON.stringify({
+                type: 'DOWNLOAD_CHART_IMAGE',
+                payload: {
+                  fileData: dataUrl,
+                  fileName: 'mapa-astral.jpg',
+                  mimeType: 'image/jpeg',
+                },
+              })
+            );
+          } else {
+            // Comportamento padrão para navegadores web
+            const link = document.createElement("a");
+            link.download = "mapa-astral.jpg";
+            link.href = dataUrl;
+            link.click();
+          }
         })
         .catch((err) => {
           console.error("Oops, algo deu errado!", err);
