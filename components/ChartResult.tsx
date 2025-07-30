@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ChevronDown, ChevronUp, Download } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, Copy, Download } from "lucide-react"
 import type { ChartHandle } from "@/components/Chart"
 
 const Chart = dynamic(() => import("@/components/Chart"), { ssr: false })
@@ -24,19 +24,30 @@ interface ChartResultProps {
 export const ChartResult = forwardRef<HTMLDivElement, ChartResultProps>(
   ({ chartResult, birthData, isOpen, onOpenChange }, ref) => {
     const chartComponentRef = React.useRef<ChartHandle>(null)
-    const [tabIndex, setTabIndex] = useState(0)
+    const [tabIndex, setTabIndex] = useState(0);
+    const [isCopied, setIsCopied] = useState(false);
 
-    const handleDownloadClick = (e: React.MouseEvent) => {
-      e.stopPropagation()
-      if (isDownloadDisabled) {
-        e.preventDefault() // Garante que nenhuma ação padrão ocorra.
-        return
+    const handleDownloadOrCopyClick = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      // Se a aba "Dados" estiver ativa, copia o JSON.
+      if (tabIndex === 2) {
+        try {
+          await navigator.clipboard.writeText(
+            JSON.stringify(chartResult, null, 2)
+          );
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000); // Reseta o ícone após 2s
+        } catch (err) {
+          console.error("Falha ao copiar os dados:", err);
+          alert("Não foi possível copiar os dados para a área de transferência.");
+        }
+        return;
       }
-      chartComponentRef.current?.downloadChart()
-    }
 
-    // A aba "Dados" é a de índice 2, então o download deve ser desativado.
-    const isDownloadDisabled = tabIndex === 2
+      // Caso contrário, aciona o download do gráfico.
+      chartComponentRef.current?.downloadChart();
+    };
 
     return (
       <Card ref={ref}>
@@ -49,12 +60,20 @@ export const ChartResult = forwardRef<HTMLDivElement, ChartResultProps>(
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleDownloadClick}
-                    aria-label="Baixar mapa como imagem"
-                    aria-disabled={isDownloadDisabled}
-                    className={isDownloadDisabled ? "opacity-50" : ""}
+                    onClick={handleDownloadOrCopyClick}
+                    aria-label={
+                      tabIndex === 2
+                        ? "Copiar dados do mapa"
+                        : "Baixar mapa como imagem"
+                    }
                   >
-                    <Download className="w-5 h-5" />
+                    {isCopied ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : tabIndex === 2 ? (
+                      <Copy className="w-5 h-5" />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
                   </Button>
                   {isOpen ? <ChevronUp /> : <ChevronDown />}
                 </div>
