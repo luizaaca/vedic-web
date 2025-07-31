@@ -8,14 +8,38 @@ import { HOUSE_POSITION_STYLES, PLANET_SYMBOLS } from "@/lib/chart-constants";
 import { JsonViewer } from "./JsonViewer";
 import chartBackground from '../public/base-map.jpg';
 
+// New interfaces for the chartData structure
+interface PlanetInfo {
+   planetName: string;
+   degree: string;
+   nakshatra: string;
+   sign: string;
+   houseNumber: number;
+}
+
+interface House {
+   houseNumber: number;
+   sign: string;
+   startDegree: string;
+   endDegrees: string;
+   planets: PlanetInfo[];
+}
+
+interface Ascendant {
+   degree: string;
+   sign: string;
+   houseNumber: number;
+}
+
+interface ChartData {
+   ascendant: Ascendant;
+   houses: House[];
+   nakshatra: string;
+   mahadasha: any; // Can be typed more strictly if needed
+}
+
 interface ChartProps {
-   chartData: {
-      ascendant: string;
-      planets: Record<
-         string,
-         { degree: string; nakshatra: string; signIndex: number }
-      >;
-   };
+   chartData: ChartData;
    birthData: {
       fullName: string;
       birthDate: string;
@@ -31,41 +55,26 @@ export interface ChartHandle {
    downloadChart: () => void;
 }
 
-// Função para agrupar planetas por casa (mantida a mesma lógica)
-const getPlanetsByHouse = (planetsData) => {
-  const planetsByHouse = {};
-  for (let i = 1; i <= 12; i++) {
-    planetsByHouse[i] = [];
-  }
+function toAstroChartFormat(chartData: ChartData) {
+   // As cúspides agora estão diretamente disponíveis nos dados das casas
+   const cusps = chartData.houses
+      .sort((a, b) => a.houseNumber - b.houseNumber)
+      .map(house => parseFloat(house.startDegree));
 
-  for (const planetName in planetsData) {
-    if (planetsData.hasOwnProperty(planetName)) {
-      const { houseIndex } = planetsData[planetName];
-      if (houseIndex) {
-        planetsByHouse[houseIndex].push(PLANET_SYMBOLS[planetName]);
-      }
-    }
-  }
-  return planetsByHouse;
-};
+   const planets: Record<string, [number]> = {};
 
-function toAstroChartFormat(chartData: ChartProps["chartData"]) {
-   const asc = parseFloat(chartData.ascendant.degree || "0");
-   const ascSign = Math.floor(asc / 30);
-   const ascStart = ascSign * 30;
-
-   const cusps = Array.from(
-      { length: 12 },
-      (_, i) => (ascStart + i * 30) % 360
-   );
-
-   const planets: Record<string, number[]> = {};
-   for (const [name, info] of Object.entries(chartData.planets)) {
-      const deg = parseFloat(info.degree);
-      if (!isNaN(deg)) {
-         planets[name] = [deg];
-      }
-   }
+   // Itera através das casas e seus planetas
+   chartData.houses.forEach(house => {
+      house.planets.forEach(planet => {
+         const deg = parseFloat(planet.degree);
+         if (!isNaN(deg)) {
+            // A biblioteca astrochart usa NNode para Rahu e SNode para Ketu
+            const planetNameForChart = planet.planetName === "Rahu" ? "NNode" : planet.planetName === "Ketu" ? "SNode" : planet.planetName;
+            // A biblioteca espera um array com o grau e, opcionalmente, a velocidade
+            planets[planetNameForChart] = [deg];
+         }
+      });
+   });
 
    return { planets, cusps };
 }
@@ -82,7 +91,18 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
       const chartContainerIdSigns = "astro-chart-container-signs";
       const chartContainerIdHouses = "astro-chart-container-houses";
       const downloadableAreaRef = useRef<HTMLDivElement>(null);
-      const [planetsInHouses, setPlanetsInHouses] = useState(getPlanetsByHouse(chartData.planets));
+      const planetsInHouses = useMemo(() => {
+         const byHouse: { [key: number]: string[] } = {};
+         // Inicializa todas as casas
+         for (let i = 1; i <= 12; i++) {
+             byHouse[i] = [];
+         }
+         // Preenche com os planetas da nova estrutura chartData
+         chartData.houses.forEach(house => {
+             byHouse[house.houseNumber] = house.planets.map(p => PLANET_SYMBOLS[p.planetName]).filter(Boolean);
+         });
+         return byHouse;
+     }, [chartData.houses]);
 
       useEffect(() => {
         if (tabIndex === 0) {
@@ -245,7 +265,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
          </TabPanel>
 
          <TabPanel>
-            <div className="bg-white/80 p-6 rounded-xl border border-gray-200 shadow-inner">               
+            <div className="bg-white/80 p-6 rounded-xl border border-gray-200 shadow-inner h-[620px] overflow-y-auto">
                <JsonViewer data={chartData} />
             </div>
          </TabPanel>
