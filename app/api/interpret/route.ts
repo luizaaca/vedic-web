@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, chartData } = await request.json()
-    console.info("Recebido para interpretação:", { question, chartData })
+    const { question, chartData, initial } = await request.json()
+    console.info("Recebido para interpretação:", { question, chartData, initial })
     // Chamar a API real para interpretação
     //const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/explain"
     const externalApiUrl = "http://localhost:8080/api/explain"
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question, chartData }),
+      body: JSON.stringify({ question, chartData, initial }),
     })
 
     if (!apiResponse.ok) {
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ interpretation })
   } catch (error) {
+    console.log("Erro ao interpretar pergunta:", error)
     return NextResponse.json({ error: "Erro ao interpretar pergunta" }, { status: 500 })
   }
 }

@@ -4,9 +4,12 @@ import Image from 'next/image';
 import { Chart as ChartLib } from "@astrodraw/astrochart";
 import { toJpeg } from "html-to-image";
 import { Tab, TabList, TabPanel, Tabs } from "react-tabs";
-import { HOUSE_POSITION_STYLES, PLANET_SYMBOLS } from "@/lib/chart-constants";
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
+import { HOUSE_POSITION_STYLES } from "@/lib/chart-constants";
 import { JsonViewer } from "./JsonViewer";
 import chartBackground from '../public/base-map.jpg';
+import PlanetIcon from "./PlanetIcon";
 
 // New interfaces for the chartData structure
 interface PlanetInfo {
@@ -93,13 +96,11 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
       const downloadableAreaRef = useRef<HTMLDivElement>(null);
       const planetsInHouses = useMemo(() => {
          const byHouse: { [key: number]: string[] } = {};
-         // Inicializa todas as casas
          for (let i = 1; i <= 12; i++) {
              byHouse[i] = [];
          }
-         // Preenche com os planetas da nova estrutura chartData
          chartData.houses.forEach(house => {
-             byHouse[house.houseNumber] = house.planets.map(p => PLANET_SYMBOLS[p.planetName]).filter(Boolean);
+             byHouse[house.houseNumber] = house.planets.map(p => p.planetName).filter(Boolean);
          });
          return byHouse;
      }, [chartData.houses]);
@@ -185,24 +186,25 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
                      </div>
                   </div>);
       return (
+      <>
       <Tabs selectedIndex={tabIndex} onSelect={onTabChange}>
          <TabList className="flex space-x-2 mb-6">
             <Tab className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 border border-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                ${tabIndex === 0 
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-white/80 text-gray-600 hover:bg-gray-100'}`}>
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                  : 'bg-gradient-to-r from-white to-gray-100 text-gray-700 hover:shadow-md hover:from-gray-50 hover:to-gray-200'}`}>
                Gráfico Casas
             </Tab>
             <Tab className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 border border-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                ${tabIndex === 1 
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-white/80 text-gray-600 hover:bg-gray-100'}`}>
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                  : 'bg-gradient-to-r from-white to-gray-100 text-gray-700 hover:shadow-md hover:from-gray-50 hover:to-gray-200'}`}>
                Gráfico Signos
             </Tab>
             <Tab className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 border border-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                ${tabIndex === 2 
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-white/80 text-gray-600 hover:bg-gray-100'}`}>
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                  : 'bg-gradient-to-r from-white to-gray-100 text-gray-700 hover:shadow-md hover:from-gray-50 hover:to-gray-200'}`}>
                Dados
             </Tab>
          </TabList>
@@ -217,7 +219,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
             {Object.keys(HOUSE_POSITION_STYLES).map((houseNum) => {
                 const HousePlanets = planetsInHouses[houseNum];
                 const positionStyle = HOUSE_POSITION_STYLES[houseNum];
-
+                  console.log(`House ${houseNum} planets:`, HousePlanets);
                 return (
                     <div
                         key={houseNum}
@@ -228,17 +230,21 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
                         }}
                     >
                         {/* Renderiza os símbolos dos planetas */}
-                        <div className="flex flex-row flex-wrap justify-center items-center gap-x-1"> 
-                            {HousePlanets.map((planetSymbol, index) => (
-                                // AQUI VOCÊ PODE SUBSTITUIR O SPAN POR UM COMPONENTE DE ÍCONE SVG/IMAGEM
-                                <span 
-                                    key={`${houseNum}-${planetSymbol}-${index}`} 
-                                    className="text-sm font-bold text-gray-800" // Ajuste tamanho/cor do texto
-                                >
-                                    {planetSymbol}
-                                </span>
-                            ))}
-                        </div>
+                        {HousePlanets.length > 0 && (
+                           <div className="flex flex-row  justify-center items-center gap-x-1 px-2 py-1 rounded-lg"> 
+                              {HousePlanets.map((planetName, index) => (
+                                 <div
+                                       key={`${houseNum}-${planetName}-${index}`}
+                                       data-tooltip-id="planet-tooltip"
+                                       data-tooltip-content={planetName}
+                                       data-tooltip-place="top"
+                                       className="cursor-pointer"
+                                 >
+                                       <PlanetIcon planetName={planetName} className="w-8 h-8 bg-yellow-400/90 rounded-lg p-1" />
+                                 </div>
+                              ))}
+                           </div>
+                        )}
                     </div>
                 );
             })}
@@ -270,6 +276,8 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
             </div>
          </TabPanel>
       </Tabs>
+      <Tooltip id="planet-tooltip" />
+      </>
 );
 });
 

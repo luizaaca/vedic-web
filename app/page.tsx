@@ -82,7 +82,8 @@ export default function VedicAstrologyApp() {
 
    const fetchInterpretation = async (
       question: string,
-      chartData: any
+      chartData: any,
+      initial = false
    ): Promise<string | null> => {
       try {
          const response = await fetch("/api/interpret", {
@@ -91,6 +92,7 @@ export default function VedicAstrologyApp() {
             body: JSON.stringify({
                question,
                chartData,
+               initial,
             }),
          });
 
@@ -114,7 +116,8 @@ export default function VedicAstrologyApp() {
             "Faça um resumo deste mapa astral. Sugira perguntas para o usuário continuar a conversa. Mas seja conversacional, pergunte se ele gostaria de saber mais.";
          const interpretation = await fetchInterpretation(
             defaultQuestion,
-            chartData
+            chartData,
+            true
          );
          const aiMessage: ChatMessage = {
             type: "ai",
