@@ -1,7 +1,10 @@
-interface ReactNativeWebView {
-  postMessage(message: string): void;
-}
+declare global {
+  interface ReactNativeWebView {
+    postMessage(message: string): void;
+  }
 
-interface Window {
-  ReactNativeWebView?: ReactNativeWebView;
+  interface Window {
+    readonly ReactNativeWebView?: ReactNativeWebView;
+  }  
 }
+export {};

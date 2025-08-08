@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { ArrowDownCircle, Loader2, MessageCircle, Send, Sparkles, User } from "lucide-react"
 
-interface ChatMessage {
+export interface ChatMessage {
   type: "user" | "ai"
   content: string
   timestamp: Date
@@ -70,17 +70,17 @@ export function ChatInterface({
   }, [messages, isChatLoading])
 
   return (
-    <Card>
+    <Card className="flex flex-col h-full w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="w-6 h-6 text-indigo-600" />
           Interpretação Personalizada
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="relative">
-          <ScrollArea className="h-80 w-full rounded-xl border border-gray-200 shadow-inner p-4">
-            <div className="space-y-4 h-full overflow-y-auto" style={{ maxHeight: "100%" }}>
+      <CardContent className="flex-1 overflow-hidden p-0">
+        <div className="relative h-full">
+          <ScrollArea className="absolute h-full w-full p-4">
+            <div className="space-y-4">
               {messages.map((message, index) => (
                 <div key={index} className={`flex items-start gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                   {index === messages.length - 1 && <div ref={chatCardRef} />}
@@ -125,15 +125,17 @@ export function ChatInterface({
             </div>
           </ScrollArea>
         </div>
-        <div className="flex items-start gap-2 pt-2">
+      </CardContent>
+      <CardFooter className="flex-col items-start gap-2 border-t p-4">
+        <div className="flex items-start gap-2">
           <Textarea placeholder="Faça outra pergunta sobre seu mapa..." value={currentQuestion} onChange={(e) => onQuestionChange(e.target.value)} className="flex-1 resize-none" rows={2} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSendQuestion(); } }} />
           <Button onClick={onSendQuestion} disabled={!currentQuestion.trim() || isChatLoading} size="icon" className="h-full">
             {isChatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             <span className="sr-only">Enviar Pergunta</span>
           </Button>
         </div>
-        <p className="text-xs text-gray-500 text-center pt-2">Você pode perguntar sobre planetas, casas, aspectos ou qualquer elemento do seu mapa.</p>
-      </CardContent>
+        <p className="text-xs text-gray-500 text-center pt-2 w-full">Você pode perguntar sobre planetas, casas, aspectos ou qualquer elemento do seu mapa.</p>
+      </CardFooter>
     </Card>
   )
 }

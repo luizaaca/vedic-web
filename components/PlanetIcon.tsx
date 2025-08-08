@@ -9,7 +9,7 @@ type SvgComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 // Isso assume que todas as exportações de './icons/planets' são componentes React válidos.
 const PLANET_COMPONENTS: Record<string, SvgComponent> = PlanetSvgs;
 
-interface PlanetIconProps {
+export interface PlanetIconProps {
   planetName: string;
   className?: string;
 }

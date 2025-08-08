@@ -3,32 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { LayoutGrid, Rows3 } from "lucide-react";
 
 import dynamic from "next/dynamic";
+import type { ChartResultData } from '@/app/api/calculate/types';
 import { ChartResult } from "@/components/ChartResult";
-import { BirthDataForm } from "@/components/BirthDataForm";
-import { ChatInterface } from "@/components/ChatInterface";
+import { BirthData, BirthDataForm } from "@/components/BirthDataForm";
+import { ChatMessage, ChatInterface } from "@/components/ChatInterface";
 import { timezones } from "@/lib/timezones";
 const MapPicker = dynamic(
    () => import("@/components/MapPicker").then((mod) => mod.MapPicker),
    { ssr: false, loading: () => <p>Carregando mapa...</p> }
 );
-
-interface BirthData {
-   fullName: string;
-   birthDate: string;
-   birthTime: string;
-   timezone: string;
-   latitude: string;
-   longitude: string;
-}
-
-interface ChatMessage {
-   type: "user" | "ai";
-   content: string;
-   timestamp: Date;
-}
 
 export default function VedicAstrologyApp() {
    const [birthData, setBirthData] = useState<BirthData>({
@@ -40,13 +26,14 @@ export default function VedicAstrologyApp() {
       longitude: "",
    });
 
-   const [chartResult, setChartResult] = useState<any>(null);
+   const [chartResult, setChartResult] = useState<ChartResultData | null>(null);
    const [isChartSectionOpen, setIsChartSectionOpen] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
    const [isMapOpen, setIsMapOpen] = useState(false);
    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
    const [currentQuestion, setCurrentQuestion] = useState("");
    const [isChatLoading, setIsChatLoading] = useState(false);
+   const [isVerticalView, setIsVerticalView] = useState(false);
    const resultsRef = useRef<HTMLDivElement>(null);
 
    const handleInputChange = (field: keyof BirthData, value: string) => {
@@ -83,22 +70,36 @@ export default function VedicAstrologyApp() {
    const fetchInterpretation = async (
       question: string,
       chartData: any,
+      chatMessages: ChatMessage[],
       initial = false
    ): Promise<string | null> => {
       try {
+         if (chatMessages.length > 0) {
+            chatMessages = chatMessages.map((msg) => ({
+               ...msg,
+               // Limpa o conteúdo de emojis, markdown, HTML e normaliza espaços
+               content: msg.content
+                  .replace(/<\/?[^>]+(>|$)/g, "") // 1. Remove tags HTML
+                  .replace(/[#*_`~]/g, "") // 2. Remove caracteres de Markdown
+                  .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '') // 3. Remove a maioria dos emojis
+                  .replace(/\s+/g, ' ') // 4. Substitui quebras de linha e espaços múltiplos por um único espaço
+                  .trim(), // 5. Remove espaços no início e no fim           
+            }));
+         }
          const response = await fetch("/api/interpret", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                question,
                chartData,
+               chatMessages,
                initial,
             }),
          });
 
          if (response.ok) {
             const result = await response.json();
-            return result.interpretation || null;
+            return result.interpretation ?? null;
          } else {
             console.error("Erro na API de interpretação:", await response.text());
             return null;
@@ -109,7 +110,7 @@ export default function VedicAstrologyApp() {
       }
    };
 
-   const getInitialInterpretation = async (chartData: any) => {
+   const getInitialInterpretation = async (chartData: unknown) => {
       setIsChatLoading(true);
       try {
          const defaultQuestion =
@@ -117,12 +118,13 @@ export default function VedicAstrologyApp() {
          const interpretation = await fetchInterpretation(
             defaultQuestion,
             chartData,
+            chatMessages,
             true
          );
          const aiMessage: ChatMessage = {
             type: "ai",
             content:
-               interpretation || "Não foi possível gerar a interpretação inicial.",
+               interpretation ?? "Não foi possível gerar a interpretação inicial.",
             timestamp: new Date(),
          };
          setChatMessages([aiMessage]);
@@ -181,7 +183,8 @@ export default function VedicAstrologyApp() {
       try {
          const interpretation = await fetchInterpretation(
             questionToAsk,
-            chartResult
+            chartResult,
+            chatMessages
          );
          const aiMessage: ChatMessage = {
             type: "ai",
@@ -194,12 +197,12 @@ export default function VedicAstrologyApp() {
       }
    };
 
-   const isFormValid =
-      birthData.birthDate &&
+   const isFormValid : boolean =
+      (birthData.birthDate &&
       birthData.birthTime &&
       birthData.timezone &&
       birthData.latitude &&
-      birthData.longitude;
+      birthData.longitude) !== "" ;
 
    const handleReset = () => {
       setBirthData({
@@ -262,23 +265,53 @@ export default function VedicAstrologyApp() {
                   onOpenMap={() => setIsMapOpen(true)}
                />
 
-               {/* Resultado do Mapa Astral */}
+               {/* Seção de Resultados (Mapa e Chat) */}
                {chartResult && (
-                  <ChartResult
-                     ref={resultsRef}
-                     chartResult={chartResult}
-                     birthData={birthData}
-                     isOpen={isChartSectionOpen}
-                     onOpenChange={setIsChartSectionOpen}
-                  />
+                  <Card ref={resultsRef} className="overflow-hidden">
+                     <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-gray-50/50">
+                        <CardTitle className="text-lg font-semibold">
+                           Seu Mapa Astral
+                        </CardTitle>
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setIsVerticalView(!isVerticalView)}
+                        >
+                           {isVerticalView ? (
+                              <LayoutGrid className="w-4 h-4 mr-2" />
+                           ) : (
+                              <Rows3 className="w-4 h-4 mr-2" />
+                           )}
+                           Alterar Visualização
+                        </Button>
+                     </CardHeader>
+                     <CardContent className="p-4 md:p-6">
+                        <div
+                           className={`flex gap-8 ${
+                              isVerticalView ? "flex-col" : "flex-col lg:flex-row max-h-screen"
+                           }`}
+                        >
+                           <div className={`w-full ${!isVerticalView ? "lg:w-1/2" : ""}`}>
+                              <ChartResult
+                                 chartResult={chartResult}
+                                 birthData={birthData}
+                                 isOpen={isChartSectionOpen}
+                                 onOpenChange={setIsChartSectionOpen}
+                              />
+                           </div>
+                           <div className={`w-full  ${!isVerticalView ? "lg:w-1/2" : ""}`}>
+                              <ChatInterface
+                                 messages={chatMessages}
+                                 currentQuestion={currentQuestion}
+                                 isChatLoading={isChatLoading}
+                                 onQuestionChange={setCurrentQuestion}
+                                 onSendQuestion={sendQuestion}
+                              />
+                           </div>
+                        </div>
+                     </CardContent>
+                  </Card>
                )}
-               {chartResult && ( <ChatInterface
-                  messages={chatMessages}
-                  currentQuestion={currentQuestion}
-                  isChatLoading={isChatLoading}
-                  onQuestionChange={setCurrentQuestion}
-                  onSendQuestion={sendQuestion}
-               />)}
             </div>
          </div>
          <MapPicker

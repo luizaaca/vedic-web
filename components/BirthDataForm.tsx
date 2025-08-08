@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import { Calculator, Loader2, Map, RotateCcw } from "lucide-react"
 
-interface BirthData {
+export interface BirthData {
   fullName: string
   birthDate: string
   birthTime: string
@@ -27,11 +27,12 @@ interface Timezone {
   label: string
 }
 
-interface BirthDataFormProps {
+export interface BirthDataFormProps {
   birthData: BirthData
   timezones: Timezone[]
   isFormValid: boolean
   isLoading: boolean
+  // eslint-disable-next-line no-unused-vars
   onInputChange: (field: keyof BirthData, value: string) => void
   onCalculate: () => void
   onReset: () => void

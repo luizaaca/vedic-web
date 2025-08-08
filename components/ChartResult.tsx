@@ -11,15 +11,24 @@ import {
 } from "@/components/ui/collapsible"
 import { Check, ChevronDown, ChevronUp, Copy, Download } from "lucide-react"
 import type { ChartHandle } from "@/components/Chart"
+import type { ChartResultData } from '@/app/api/calculate/types';
+
 
 const Chart = dynamic(() => import("@/components/Chart"), { ssr: false })
 
-interface ChartResultProps {
-  chartResult: any
-  birthData: any
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
+export interface ChartResultProps  {
+  chartResult: ChartResultData
+    birthData: {
+        fullName: string;
+        birthDate: string;
+        birthTime: string;
+        latitude: string;
+        longitude: string;
+     };
+   isOpen: boolean
+   onOpenChange: (isOpen: boolean) => void
 }
+
 
 export const ChartResult = forwardRef<HTMLDivElement, ChartResultProps>(
   ({ chartResult, birthData, isOpen, onOpenChange }, ref) => {
@@ -40,7 +49,6 @@ export const ChartResult = forwardRef<HTMLDivElement, ChartResultProps>(
           setTimeout(() => setIsCopied(false), 2000); // Reseta o ícone após 2s
         } catch (err) {
           console.error("Falha ao copiar os dados:", err);
-          alert("Não foi possível copiar os dados para a área de transferência.");
         }
         return;
       }
@@ -84,7 +92,7 @@ export const ChartResult = forwardRef<HTMLDivElement, ChartResultProps>(
             <CardContent className="pt-4">
               <Chart
                 ref={chartComponentRef}
-                chartData={chartResult}
+                chartResult={chartResult}
                 birthData={birthData}
                 tabIndex={tabIndex}
                 onTabChange={setTabIndex}

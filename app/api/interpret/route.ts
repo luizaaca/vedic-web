@@ -2,8 +2,28 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, chartData, initial } = await request.json()
-    console.info("Recebido para interpretação:", { question, chartData, initial })
+    interface RequestData {
+      question: string;
+      chartData: {
+        latitude: number;
+        longitude: number;
+      };
+      chatMessages: [{
+        id: string;
+        content: string;
+        isUser: boolean;
+      }];
+      initial: boolean;
+    }
+
+    const { 
+      question, 
+      chartData, 
+      chatMessages, 
+      initial 
+    }: RequestData = await request.json() as RequestData
+    
+    console.info("Recebido para interpretação:", { question, chartData, chatMessages, initial })
     // Chamar a API real para interpretação
     //const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/explain"
     const externalApiUrl = "http://localhost:8080/api/explain"
@@ -12,7 +32,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question, chartData, initial }),
+      body: JSON.stringify({ question, chartData, chatMessages, initial }),
     })
 
     if (!apiResponse.ok) {
@@ -26,14 +46,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const responseData = await apiResponse.json()
-
-    // Assumindo que a API externa retorna um objeto com a chave "interpretation"
-    const interpretation = responseData.interpretation
-    if (typeof interpretation !== "string") {
-      console.error("Resposta da API externa não continha uma 'interpretation' válida:", responseData)
-      throw new Error("A resposta da API externa não forneceu uma interpretação no formato esperado.")
+    const responseData = await apiResponse.json() as unknown;
+    
+    // Verificando se responseData possui a propriedade 'interpretation' e é uma string
+    if (!responseData?.interpretation || typeof responseData.interpretation !== "string") {
+      console.error("Resposta da API externa não continha uma 'interpretation' válida:", responseData);
+      throw new Error("A resposta da API externa não forneceu uma interpretação no formato esperado.");
     }
+
+    const interpretation: string = responseData.interpretation as string;
 
     return NextResponse.json({ interpretation })
   } catch (error) {
