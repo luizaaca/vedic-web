@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     
     console.info("Recebido para interpretação:", { question, chartData, chatMessages, initial })
     // Chamar a API real para interpretação
-    //const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/explain"
-    const externalApiUrl = "http://localhost:8080/api/explain"
+    const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/explain"
+    //const externalApiUrl = "http://localhost:8080/api/explain"
     const apiResponse = await fetch(externalApiUrl, {
       method: "POST",
       headers: {

@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
 
     // Chamar a API real para cálculo do mapa astral védico
     console.log('Enviando para API /vedic:', payloadForVedicApi);
-    //const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/vedic"
-    const externalApiUrl = 'http://localhost:8080/api/vedic'; // Use localhost for local testing
+    const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/vedic"
+    //const externalApiUrl = 'http://localhost:8080/api/vedic'; // Use localhost for local testing
     const apiResponse = await fetch(externalApiUrl, {
       method: 'POST',
       headers: {
