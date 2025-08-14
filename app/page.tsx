@@ -299,7 +299,7 @@ export default function VedicAstrologyApp() {
                                  onOpenChange={setIsChartSectionOpen}
                               />
                            </div>
-                           <div className={`w-full  ${!isVerticalView ? "lg:w-1/2" : ""}`}>
+                           <div className={`w-full ${!isVerticalView ? "lg:w-1/2" : ""} ${isVerticalView ? "h-[700px]" : ""}`}>
                               <ChatInterface
                                  messages={chatMessages}
                                  currentQuestion={currentQuestion}

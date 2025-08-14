@@ -48,7 +48,7 @@ const JsonNode = ({ nodeKey, nodeValue, level }: { nodeKey: string, nodeValue: a
 
 export const JsonViewer = ({ data }: JsonViewerProps) => {
   return (
-    <div className="font-mono text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-x-auto">
+    <div className="font-mono text-sm bg-gray-50 p-2 rounded-lg border border-gray-200 overflow-x-auto">
       {Object.entries(data).map(([key, value]) => (
         <JsonNode key={key} nodeKey={key} nodeValue={value} level={0} />
       ))}

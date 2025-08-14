@@ -1,48 +1,42 @@
 // eslint.config.mts
-import eslint from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import tseslint from 'typescript-eslint';
 
 export const ignores = [
   '**/node_modules/**',
   '**/.next/**',
   '**/dist/**',
-  'eslint.config.mts',
-  '**/*.d.ts',
+  'eslint.config.mts'  
 ];
 
+// Exporta um array de configs (flat config)
 export default [
-  eslint.configs.recommended,
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    // Ignora pastas e arquivos
+    ignores: [...ignores, '**/*.d.ts'],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      '@next/next': nextPlugin,
+      '@typescript-eslint': tseslint.plugin,
+    },
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: './tsconfig.json', // usa tsconfig.json
+        project: './tsconfig.json',
         tsconfigRootDir: process.cwd(),
       },
-      globals: {
-        console: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        fetch: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        navigator: 'readonly',
-        setTimeout: 'readonly',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
+      ...nextPlugin.configs['core-web-vitals'].rules,
       ...tseslint.configs.recommendedTypeChecked[0].rules,
       ...tseslint.configs.stylisticTypeChecked[0].rules,
-      'react/jsx-uses-react': 'off', // não é mais necessário com React 17+
-      'react/react-in-jsx-scope': 'off', // idem
+
+      // Ajustes que geralmente se faz no TS + Next
+      'react/jsx-uses-react': 'off',
+      'react/react-in-jsx-scope': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        'error',
         {
           varsIgnorePattern: '^_',
           argsIgnorePattern: '^_',
@@ -50,34 +44,19 @@ export default [
       ],
       '@typescript-eslint/no-unused-expressions': 'warn',
     },
-    overrides: [
-      {
-        // Para arquivos de declaração
-        files: ['**/*.d.ts'],
-        rules: {
-          '@typescript-eslint/no-unused-vars': 'off',
-        },
-      },
-    ],
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
   },
   {
-    files: ['**/*.js', '**/*.cjs', '**/*.mts', '**/*.mjs'],
+    ignores,
+    files: ['**/*.d.ts'],
     languageOptions: {
+      parser: tseslint.parser,
       parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-      globals: {
-        process: 'readonly',
+        project: './tsconfig.json',
+        tsconfigRootDir: process.cwd(),
       },
     },
     rules: {
-      // sem rules pesadas aqui
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 ];

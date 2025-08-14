@@ -193,6 +193,11 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
               {parseFloat(birthData.longitude).toFixed(4)}
             </span>
           </div>
+          <div className='flex justify-between'>
+            <span className="font-medium text-gray-500">Ascendente:</span>
+            <span>{chartResult.ascendant.degree}º em {chartResult.ascendant.sign}
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -257,7 +262,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
                                   <div
                                     key={`${houseNum}-${planetName}-${index}`}
                                     data-tooltip-id="planet-tooltip"
-                                    data-tooltip-content={`${planetName} - house ${houseNum}`}
+                                    data-tooltip-content={`**${planetName}**: house ${houseNum} at ${chartResult.houses[houseNum-1].planets[index].degree}º`}
                                     data-tooltip-place="top"
                                     className="cursor-pointer"
                                   >
@@ -303,8 +308,8 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
           </TabPanel>
 
           <TabPanel>
-            <div className="bg-white/80 p-6 rounded-xl border border-gray-200 shadow-inner h-[620px] overflow-y-auto">
-              <JsonViewer data={chartResult} />
+            <div className="bg-white/80 rounded-xl border border-gray-200 shadow-inner overflow-hidden max-h-[550px] overflow-y-auto">
+                <JsonViewer data={chartResult} />
             </div>
           </TabPanel>
         </Tabs>

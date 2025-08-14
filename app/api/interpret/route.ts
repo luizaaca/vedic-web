@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+interface Interpretation {
+  interpretation: string
+}
+
 export async function POST(request: NextRequest) {
   try {
     interface RequestData {
@@ -25,8 +29,7 @@ export async function POST(request: NextRequest) {
     
     console.info("Recebido para interpretação:", { question, chartData, chatMessages, initial })
     // Chamar a API real para interpretação
-    const externalApiUrl = "https://vedic-app-197322431493.europe-west1.run.app/api/explain"
-    //const externalApiUrl = "http://localhost:8080/api/explain"
+    const externalApiUrl = process.env.INTERPRET_API_URL || "http://localhost:8080/api/explain"
     const apiResponse = await fetch(externalApiUrl, {
       method: "POST",
       headers: {
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const responseData = await apiResponse.json() as unknown;
+    const responseData = await apiResponse.json() as Interpretation;
     
     // Verificando se responseData possui a propriedade 'interpretation' e é uma string
     if (!responseData?.interpretation || typeof responseData.interpretation !== "string") {

@@ -117,8 +117,7 @@ export function MapPicker({ isOpen, onOpenChange, onLocationSelect }: MapPickerP
         setShowSuggestions(false)
       }
     }, 400)
-    // eslint-disable-next-line
-    return () => debounceTimeout.current && clearTimeout(debounceTimeout.current)
+    return () => { debounceTimeout.current && clearTimeout(debounceTimeout.current) }
   }, [search])
 
   // Busca e centraliza no mapa ao clicar na lupa ou pressionar Enter
