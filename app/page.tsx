@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, Rows3 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import dynamic from "next/dynamic";
 import type { ChartResultData } from '@/app/api/calculate/types';
@@ -34,6 +35,7 @@ export default function VedicAstrologyApp() {
    const [currentQuestion, setCurrentQuestion] = useState("");
    const [isChatLoading, setIsChatLoading] = useState(false);
    const [isVerticalView, setIsVerticalView] = useState(false);
+   const isMobile = useIsMobile();
    const resultsRef = useRef<HTMLDivElement>(null);
 
    const handleInputChange = (field: keyof BirthData, value: string) => {
@@ -220,14 +222,16 @@ export default function VedicAstrologyApp() {
    };
 //Temporario
    useEffect(() => {
-      setBirthData({
-         fullName: "",
-         birthDate: "1985-11-16", // Data de nascimento padrão
-         birthTime: "07:50", // Hora de nascimento padrão
-         timezone: "-3",
-         latitude: "-23.567102",
-         longitude: "-46.626801",
-      });
+      if (process.env.NODE_ENV === "development") {
+         setBirthData({
+            fullName: "",
+            birthDate: "1985-11-16", // Data de nascimento padrão
+            birthTime: "07:50", // Hora de nascimento padrão
+            timezone: "-3",
+            latitude: "-23.567102",
+            longitude: "-46.626801",
+         });
+      }
    }, []);
 
    useEffect(() => {
@@ -272,26 +276,28 @@ export default function VedicAstrologyApp() {
                         <CardTitle className="text-lg font-semibold">
                            Seu Mapa Astral
                         </CardTitle>
-                        <Button
-                           variant="outline"
-                           size="sm"
-                           onClick={() => setIsVerticalView(!isVerticalView)}
-                        >
-                           {isVerticalView ? (
-                              <LayoutGrid className="w-4 h-4 mr-2" />
-                           ) : (
-                              <Rows3 className="w-4 h-4 mr-2" />
-                           )}
-                           Alterar Visualização
-                        </Button>
+                        {!isMobile && (
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsVerticalView(!isVerticalView)}
+                           >
+                              {isVerticalView ? (
+                                 <LayoutGrid className="w-4 h-4 mr-2" />
+                              ) : (
+                                 <Rows3 className="w-4 h-4 mr-2" />
+                              )}
+                              Alterar Visualização
+                           </Button>
+                        )}
                      </CardHeader>
                      <CardContent className="p-4 md:p-6">
                         <div
                            className={`flex gap-8 ${
-                              isVerticalView ? "flex-col" : "flex-col lg:flex-row max-h-screen"
+                              isVerticalView || isMobile ? "flex-col" : "flex-col lg:flex-row max-h-screen"
                            }`}
                         >
-                           <div className={`w-full ${!isVerticalView ? "lg:w-1/2" : ""}`}>
+                           <div className={`w-full ${!(isVerticalView || isMobile) ? "lg:w-1/2" : ""}`}>
                               <ChartResult
                                  chartResult={chartResult}
                                  birthData={birthData}
@@ -299,7 +305,7 @@ export default function VedicAstrologyApp() {
                                  onOpenChange={setIsChartSectionOpen}
                               />
                            </div>
-                           <div className={`w-full ${!isVerticalView ? "lg:w-1/2" : ""} ${isVerticalView ? "h-[700px]" : ""}`}>
+                           <div className={`w-full ${!(isVerticalView || isMobile) ? "lg:w-1/2" : ""} ${isVerticalView || isMobile ? "h-[700px]" : ""}`}>
                               <ChatInterface
                                  messages={chatMessages}
                                  currentQuestion={currentQuestion}
