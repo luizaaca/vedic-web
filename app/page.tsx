@@ -220,19 +220,7 @@ export default function VedicAstrologyApp() {
       setCurrentQuestion("");
       setIsChartSectionOpen(false);
    };
-//Temporario
-   useEffect(() => {
-      if (process.env.NODE_ENV === "development") {
-         setBirthData({
-            fullName: "",
-            birthDate: "1985-11-16", // Data de nascimento padrão
-            birthTime: "07:50", // Hora de nascimento padrão
-            timezone: "-3",
-            latitude: "-23.567102",
-            longitude: "-46.626801",
-         });
-      }
-   }, []);
+
 
    useEffect(() => {
       if (chartResult && resultsRef.current) {

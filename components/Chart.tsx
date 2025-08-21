@@ -17,6 +17,7 @@ import { HOUSE_POSITION_STYLES } from '@/lib/chart-constants';
 import { JsonViewer } from './JsonViewer';
 import chartBackground from '../public/base-map.jpg';
 import PlanetIcon from './PlanetIcon';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { ChartResultData } from '@/app/api/calculate/types';
 
 export interface ChartProps {
@@ -74,6 +75,7 @@ function formatDate(dateString: string) {
 const Chart = forwardRef<ChartHandle, ChartProps>(
   ({ chartResult, birthData, tabIndex, onTabChange }, ref) => {
     const data = useMemo(() => toAstroChartFormat(chartResult), [chartResult]);
+    const isMobile = useIsMobile();
     const chartContainerIdSigns = 'astro-chart-container-signs';
     const chartContainerIdHouses = 'astro-chart-container-houses';
     const downloadableAreaRef = useRef<HTMLDivElement>(null);
@@ -201,15 +203,17 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
         </div>
       </div>
     );
+    const tabs = [
+      { label: 'Gráfico Casas', index: 0 },
+      { label: 'Gráfico Signos', index: 1 },
+      { label: 'Dados', index: 2 },
+    ].filter(tab => !(isMobile && tab.label === 'Gráfico Signos'));
+
     return (
       <>
         <Tabs selectedIndex={tabIndex} onSelect={onTabChange}>
           <TabList className="flex gap-2 mb-6 pb-2">
-            {[
-              { label: 'Gráfico Casas', index: 0 },
-              { label: 'Gráfico Signos', index: 1 },
-              { label: 'Dados', index: 2 },
-            ].map(({ label, index }) => (
+            {tabs.map(({ label, index }) => (
               <Tab
                 key={index}
                 className={`whitespace-nowrap px-4 sm:px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 border border-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
@@ -285,7 +289,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
             </div>
           </TabPanel>
 
-          <TabPanel>
+          {!isMobile && <TabPanel>
             <div
               ref={tabIndex === 1 ? downloadableAreaRef : undefined}
               className="bg-white/80 p-6 rounded-xl border border-gray-200 text-center shadow-inner text-gray-600"
@@ -305,7 +309,7 @@ const Chart = forwardRef<ChartHandle, ChartProps>(
                 {birthDataView}
               </div>
             </div>
-          </TabPanel>
+          </TabPanel>}
 
           <TabPanel>
             <div className="bg-white/80 rounded-xl border border-gray-200 shadow-inner overflow-hidden max-h-[550px] overflow-y-auto">
